@@ -23,13 +23,13 @@ body {
 }
 
 .main-buttons > button {
-  font-size: 20mm;
+  font-size: 18mm;
   border-radius: 6mm;
 }
 
 .periods {
   display: grid;
-  grid-template-columns: 1fr 8fr 2fr 2fr;
+  grid-template-columns: 1fr 9fr 3fr 3fr;
   grid-column-gap: 3mm;
   margin-right: 5mm;
 }
@@ -45,5 +45,7 @@ body {
 
 .time {
   font-size: 70mm;
+  height: 70mm;
   text-align: center;
+  line-height: 1;
 }
