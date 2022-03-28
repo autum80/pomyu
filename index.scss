@@ -1,0 +1,41 @@
+// Override default variables
+$primary-500: #e91e63;
+$primary-600: #d81b60;
+$primary-700: #c2185b;
+@import 'assets/pico/scss/pico.scss';
+
+.main-container {
+  max-width: 500px;
+}
+
+.periods {
+  min-height: 500px;
+}
+
+.time {
+  font-size: 100px;
+  text-align: center;
+}
+
+.current-period {
+  position: relative;
+}
+
+.current-period::before {
+  background-image: var(--icon-chevron);
+  width: 2rem;
+  height: 2rem;
+  float: left;
+  background-size: 2rem auto;
+  content: "";
+  position: absolute;
+  transform: rotate(-90deg);
+  top: 0.5rem;
+  left: -2rem;
+  vertical-align: middle;
+  display: inline;
+}
+
+.period-name {
+  width: 80%;
+}
