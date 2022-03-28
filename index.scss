@@ -5,37 +5,34 @@ $primary-700: #c2185b;
 @import 'assets/pico/scss/pico.scss';
 
 .main-container {
-  max-width: 500px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.main-buttons {
+  margin: 0;
+  display: grid;
+  grid: auto-flow / 1fr 2fr 1fr;
+  grid-column-gap: 12px;
+}
+
+.main-buttons > button {
+  font-size: 2cm;
+  border-radius: 6mm;
 }
 
 .periods {
-  min-height: 500px;
+  display: grid;
+  grid-template-columns: 1fr 8fr 2fr 2fr;
+  grid-column-gap: 12px;
+}
+
+.periods > input, div {
+  font-size: 12mm;
 }
 
 .time {
-  font-size: 100px;
+  font-size: 7cm;
   text-align: center;
-}
-
-.current-period {
-  position: relative;
-}
-
-.current-period::before {
-  background-image: var(--icon-chevron);
-  width: 2rem;
-  height: 2rem;
-  float: left;
-  background-size: 2rem auto;
-  content: "";
-  position: absolute;
-  transform: rotate(-90deg);
-  top: 0.5rem;
-  left: -2rem;
-  vertical-align: middle;
-  display: inline;
-}
-
-.period-name {
-  width: 80%;
 }

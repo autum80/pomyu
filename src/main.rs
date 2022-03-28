@@ -293,7 +293,7 @@ impl Component for App {
         }
         let center_button_contents = center_button_msg.to_str();
         html! {
-            <div class="container-fluid main-container">
+            <div class="main-container">
                 <div class="time">
                     {
                         if let Some(prog) = self.progress {
@@ -309,7 +309,7 @@ impl Component for App {
                     }
                     max={ self.get_current_period_length().as_millis().to_string() }>
                 </progress>
-                <div class="grid">
+                <div class="main-buttons">
                     <button disabled={self.progress.is_none()}
                             onclick={ctx.link().callback(|_| Msg::Reset)}>
                         { "Reset" }
@@ -323,51 +323,54 @@ impl Component for App {
                         { "Skip" }
                     </button>
                 </div>
-                <div class="grid periods">
-                    <div>
+                <div class="periods">
                     { for self.periods.iter().enumerate().map(|(i, period)| {
                         html!{
+                            <>
                             <div class={
                                 {
                                     if i == self.current_period {
-                                        "grid current-period".to_string()
+                                        "current-period".to_string()
                                     } else {
-                                        "grid".to_string()
+                                        "".to_string()
                                     }
                                 }
                             }>
-                                <div>
-                                    <input type="text"
-                                        oninput={ctx.link().batch_callback(move |e: InputEvent| {
-                                            e.target()
-                                             .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                                             .map(|el| Msg::UpdateName(i, el.value()))
-                                        })}
-                                        value={ period.name.clone() }/>
-                                </div>
-                                <div class="grid">
-                                    <input type="number" min=0
-                                    oninput={ctx.link().batch_callback(move |e: InputEvent| {
-                                        e.target()
-                                            .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                                            .and_then(|el| {el.value().parse().ok()})
-                                            .map(|val| Msg::UpdateMinutes(i, val))
-                                    })}
-                                    value={ (period.duration.as_secs() / 60).to_string() }/>
-                                    <input type="number" min=0 max=60
-                                    oninput={ctx.link().batch_callback(move |e: InputEvent| {
-                                        e.target()
-                                            .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                                            .and_then(|el| {el.value().parse().ok()})
-                                            .map(|val| Msg::UpdateSeconds(i, val))
-                                    })}
-                                    value={ (period.duration.as_secs() % 60).to_string() }/>
-                                </div>
+                                {
+                                    if i == self.current_period {
+                                        ">".to_string()
+                                    } else {
+                                        "".to_string()
+                                    }
+                                }
                             </div>
+                                <input type="text"
+                                    oninput={ctx.link().batch_callback(move |e: InputEvent| {
+                                        e.target()
+                                         .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                                         .map(|el| Msg::UpdateName(i, el.value()))
+                                    })}
+                                    value={ period.name.clone() }/>
+                                <input type="number" min=0
+                                oninput={ctx.link().batch_callback(move |e: InputEvent| {
+                                    e.target()
+                                        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                                        .and_then(|el| {el.value().parse().ok()})
+                                        .map(|val| Msg::UpdateMinutes(i, val))
+                                })}
+                                value={ (period.duration.as_secs() / 60).to_string() }/>
+                                <input type="number" min=0 max=60
+                                oninput={ctx.link().batch_callback(move |e: InputEvent| {
+                                    e.target()
+                                        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                                        .and_then(|el| {el.value().parse().ok()})
+                                        .map(|val| Msg::UpdateSeconds(i, val))
+                                })}
+                                value={ (period.duration.as_secs() % 60).to_string() }/>
+                            </>
                         }
                       })
                     }
-                    </div>
                 </div>
             </div>
         }
