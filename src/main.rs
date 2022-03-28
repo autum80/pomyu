@@ -71,7 +71,7 @@ impl App {
             let minutes_left_now: f64 = (current_period_length.as_secs_f64() - prog.as_secs_f64()) / 60.;
             console::log!("minutes_left_now", minutes_left_now);
             if minutes_left_now <= 0. {
-                let notification_period_len = 2.;
+                let notification_period_len = 5.;
                 let notification_periods_since_over = -minutes_left_now / notification_period_len;
                 console::log!("notification_periods_since_over", notification_periods_since_over);
                 let notification_periods_before = -minutes_left_before / notification_period_len;
