@@ -4,6 +4,11 @@ $primary-600: #d81b60;
 $primary-700: #c2185b;
 @import 'assets/pico/scss/pico.scss';
 
+body {
+  width: 100%;
+  margin: 0;
+}
+
 .main-container {
   max-width: 700px;
   margin-left: auto;
@@ -14,25 +19,31 @@ $primary-700: #c2185b;
   margin: 0;
   display: grid;
   grid: auto-flow / 1fr 2fr 1fr;
-  grid-column-gap: 12px;
+  grid-column-gap: 3mm;
 }
 
 .main-buttons > button {
-  font-size: 2cm;
+  font-size: 20mm;
   border-radius: 6mm;
 }
 
 .periods {
   display: grid;
   grid-template-columns: 1fr 8fr 2fr 2fr;
-  grid-column-gap: 12px;
+  grid-column-gap: 3mm;
+  margin-right: 5mm;
 }
 
 .periods > input, div {
   font-size: 12mm;
 }
 
+.periods > div {
+  line-height: 1.2;
+  text-align: center;
+}
+
 .time {
-  font-size: 7cm;
+  font-size: 70mm;
   text-align: center;
 }
