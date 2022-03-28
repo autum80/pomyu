@@ -1,11 +1,14 @@
 use gloo::{console, timers::callback::Interval};
+use serde::{Deserialize, Serialize};
 use std::borrow::Borrow;
 use std::convert::Into;
 use std::time::Duration;
-use wasm_bindgen::{JsValue, JsCast};
-use web_sys::{Notification, NotificationOptions, InputEvent, HtmlInputElement, HtmlAudioElement, window};
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys::{
+    window, FocusEvent, HtmlAudioElement, HtmlInputElement, InputEvent, Notification,
+    NotificationOptions,
+};
 use yew::{html, Component, Context, Html};
-use serde::{Serialize, Deserialize};
 
 static TICK_INTERVAL: u32 = 1000;
 
@@ -47,6 +50,7 @@ pub struct App {
     progress: Option<Duration>,
     periods: Vec<Period>,
     current_period: usize,
+    alarm_sound: Option<HtmlAudioElement>,
 }
 
 impl App {
@@ -65,37 +69,44 @@ impl App {
     fn notify(&mut self, milliseconds_update: u32) {
         let current_period_length = self.get_current_period_length();
         if let Some(prog) = self.progress.as_mut() {
-            let minutes_left_before: f64 = (current_period_length.as_secs_f64() - prog.as_secs_f64()) / 60.;
-            let (_, tick_count, tick_start) = self.interval.as_mut().expect("in notify, interval must not be none");
+            let minutes_left_before: f64 =
+                (current_period_length.as_secs_f64() - prog.as_secs_f64()) / 60.;
+            let (_, tick_count, tick_start) = self
+                .interval
+                .as_mut()
+                .expect("in notify, interval must not be none");
             update_progress(prog, milliseconds_update, tick_count, *tick_start);
-            let minutes_left_now: f64 = (current_period_length.as_secs_f64() - prog.as_secs_f64()) / 60.;
+            let minutes_left_now: f64 =
+                (current_period_length.as_secs_f64() - prog.as_secs_f64()) / 60.;
             if minutes_left_now <= 0. {
                 let notification_period_len = 5.;
                 let notification_periods_since_over = -minutes_left_now / notification_period_len;
                 let notification_periods_before = -minutes_left_before / notification_period_len;
                 if notification_periods_since_over.floor() > notification_periods_before.floor() {
                     // We should notify
-                    let period_name =
-                        if let Some(period) = self.periods.get(self.current_period) {
-                            period.name.clone()
-                        } else {
-                            "Work".to_string()
-                        };
-                        let mut note_options = NotificationOptions::new();
-                        let note_message = if notification_periods_since_over >= 1. {
-                            format!("{} has been over for {} minutes", period_name,
-                                (notification_periods_since_over * notification_period_len) as i64)
-                        } else {
-                            format!("{} is over", period_name)
-                        };
-                        note_options.body(&note_message);
-                        log_error(
-                            Notification::new_with_options("Done!", &note_options),
-                            "Could not show notification",
-                        );
-                        if let Ok(audio) = HtmlAudioElement::new_with_src("notification.mp3") {
-                            audio.set_autoplay(true);
-                        }
+                    let period_name = if let Some(period) = self.periods.get(self.current_period) {
+                        period.name.clone()
+                    } else {
+                        "Work".to_string()
+                    };
+                    let mut note_options = NotificationOptions::new();
+                    let note_message = if notification_periods_since_over >= 1. {
+                        format!(
+                            "{} has been over for {} minutes",
+                            period_name,
+                            (notification_periods_since_over * notification_period_len) as i64
+                        )
+                    } else {
+                        format!("{} is over", period_name)
+                    };
+                    note_options.body(&note_message);
+                    log_error(
+                        Notification::new_with_options("Done!", &note_options),
+                        "Could not show notification",
+                    );
+                    if let Some(audio) = &self.alarm_sound {
+                        log_error(audio.play(), "Could not play alarm sound");
+                    }
                 }
             }
         }
@@ -104,7 +115,8 @@ impl App {
     fn save_periods(&self) -> Result<(), JsValue> {
         let window = window().ok_or("no window")?;
         let storage = window.local_storage()?.ok_or("no local storage")?;
-        let content = serde_json::to_string(&self.periods).map_err(|_| "Error serializing periods")?;
+        let content =
+            serde_json::to_string(&self.periods).map_err(|_| "Error serializing periods")?;
         storage.set("pomyu_periods", &content)?;
         Ok(())
     }
@@ -112,7 +124,9 @@ impl App {
     fn load_periods(&mut self) -> Result<(), JsValue> {
         let window = window().ok_or("no window")?;
         let storage = window.local_storage()?.ok_or("no local storage")?;
-        let content = storage.get("pomyu_periods")?.ok_or("pomyu_periods not found")?;
+        let content = storage
+            .get("pomyu_periods")?
+            .ok_or("pomyu_periods not found")?;
         self.periods = serde_json::from_str(&content).map_err(|e| e.to_string())?;
         Ok(())
     }
@@ -142,7 +156,12 @@ fn get_utc_millis() -> f64 {
     js_sys::Date::new_0().get_time()
 }
 
-fn update_progress(progress: &mut Duration, expected_millisecond_update: u32, tick_count: &mut u64, tick_start: f64) {
+fn update_progress(
+    progress: &mut Duration,
+    expected_millisecond_update: u32,
+    tick_count: &mut u64,
+    tick_start: f64,
+) {
     let update = Duration::from_millis(expected_millisecond_update as u64);
     let time_now = get_utc_millis();
     let new_progress = Duration::from_millis((time_now - tick_start) as u64);
@@ -158,6 +177,10 @@ impl Component for App {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
+        let alarm_sound = log_error(
+            HtmlAudioElement::new_with_src("notification.mp3"),
+            "Could not load alarm sound",
+        );
         let mut this = Self {
             messages: Vec::new(),
             interval: None,
@@ -181,6 +204,7 @@ impl Component for App {
                 },
             ],
             current_period: 0,
+            alarm_sound,
         };
         log_error(this.load_periods(), "Could not load periods");
         this
@@ -289,6 +313,15 @@ impl Component for App {
             center_button_msg = Msg::Start;
         }
         let center_button_contents = center_button_msg.to_str();
+        let full_select = ctx.link().batch_callback(|e: FocusEvent| {
+            if let Some(el) = e
+                .target()
+                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+            {
+                el.select();
+            }
+            None
+        });
         html! {
             <div class="main-container">
                 <div class="time">
@@ -342,6 +375,7 @@ impl Component for App {
                                 }
                             </div>
                                 <input type="text"
+                                    onfocus={full_select.clone()}
                                     oninput={ctx.link().batch_callback(move |e: InputEvent| {
                                         e.target()
                                          .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
@@ -349,21 +383,23 @@ impl Component for App {
                                     })}
                                     value={ period.name.clone() }/>
                                 <input type="number" min=0
-                                oninput={ctx.link().batch_callback(move |e: InputEvent| {
-                                    e.target()
-                                        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                                        .and_then(|el| {el.value().parse().ok()})
-                                        .map(|val| Msg::UpdateMinutes(i, val))
-                                })}
-                                value={ (period.duration.as_secs() / 60).to_string() }/>
+                                    onfocus={full_select.clone()}
+                                    oninput={ctx.link().batch_callback(move |e: InputEvent| {
+                                        e.target()
+                                            .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                                            .and_then(|el| {el.value().parse().ok()})
+                                            .map(|val| Msg::UpdateMinutes(i, val))
+                                    })}
+                                    value={ (period.duration.as_secs() / 60).to_string() }/>
                                 <input type="number" min=0 max=60
-                                oninput={ctx.link().batch_callback(move |e: InputEvent| {
-                                    e.target()
-                                        .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                                        .and_then(|el| {el.value().parse().ok()})
-                                        .map(|val| Msg::UpdateSeconds(i, val))
-                                })}
-                                value={ (period.duration.as_secs() % 60).to_string() }/>
+                                    onfocus={full_select.clone()}
+                                    oninput={ctx.link().batch_callback(move |e: InputEvent| {
+                                        e.target()
+                                            .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                                            .and_then(|el| {el.value().parse().ok()})
+                                            .map(|val| Msg::UpdateSeconds(i, val))
+                                    })}
+                                    value={ (period.duration.as_secs() % 60).to_string() }/>
                             </>
                         }
                       })
