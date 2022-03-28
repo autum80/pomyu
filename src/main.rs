@@ -69,13 +69,10 @@ impl App {
             let (_, tick_count, tick_start) = self.interval.as_mut().expect("in notify, interval must not be none");
             update_progress(prog, milliseconds_update, tick_count, *tick_start);
             let minutes_left_now: f64 = (current_period_length.as_secs_f64() - prog.as_secs_f64()) / 60.;
-            console::log!("minutes_left_now", minutes_left_now);
             if minutes_left_now <= 0. {
                 let notification_period_len = 5.;
                 let notification_periods_since_over = -minutes_left_now / notification_period_len;
-                console::log!("notification_periods_since_over", notification_periods_since_over);
                 let notification_periods_before = -minutes_left_before / notification_period_len;
-                console::log!("notification_periods_before", notification_periods_before);
                 if notification_periods_since_over.floor() > notification_periods_before.floor() {
                     // We should notify
                     let period_name =
